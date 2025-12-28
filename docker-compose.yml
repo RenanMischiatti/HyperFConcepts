@@ -1,0 +1,35 @@
+services:
+  hyperf:
+    container_name: hyperf-skeleton
+    build:
+      context: .
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/opt/www
+    ports:
+      - "9501:9501"
+    depends_on:
+      - mysql
+    command: ["php", "/opt/www/bin/hyperf.php", "start"]
+    restart: unless-stopped
+
+  mysql:
+    container_name: hyperf-mysql
+    image: mysql:8.0
+    env_file:
+      - ./.env 
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+
+networks:
+  default:
+    name: hyperf-skeleton
