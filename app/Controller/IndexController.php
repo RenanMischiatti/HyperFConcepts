@@ -12,16 +12,20 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Hyperf\Contract\ContainerInterface;
+use Hyperf\View\RenderInterface;
+
 class IndexController extends AbstractController
 {
+    protected $render;
+
+    public function __construct(ContainerInterface $container)
+    {
+        $this->render = $container->get(RenderInterface::class);
+    }
+
     public function index()
     {
-        $user = $this->request->input('user', 'Hyperf');
-        $method = $this->request->getMethod();
-
-        return [
-            'method' => $method,
-            'message' => "Hello {$user}.",
-        ];
+        return $this->render->render('home', ['name' => 'Mundo']);
     }
 }

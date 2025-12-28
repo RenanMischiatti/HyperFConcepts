@@ -6,7 +6,12 @@ services:
     env_file:
       - ./.env
     volumes:
-      - ./:/opt/www
+      - ./app:/opt/www/app
+      - ./config:/opt/www/config
+      - ./public:/opt/www/public
+      - ./resources:/opt/www/resources
+      - ./composer.json:/opt/www/composer.json
+      - ./composer.lock:/opt/www/composer.lock
     ports:
       - "9501:9501"
     depends_on:
