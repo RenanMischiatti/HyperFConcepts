@@ -41,42 +41,19 @@
         </tr>
       </thead>
       <tbody id="user-table">
-        
-        {{-- @forelse($users as $user)
+        @foreach($users as $user)
           <tr>
-            <td>{{ $user['id'] }}</td>
-            <td>{{ $user['name'] }}</td>
-            <td>{{ $user['email'] }}</td>
-            <td>{{ $user['created_at'] }}</td>
+            <td>{{ $user->id }}</td>
+            <td>{{ $user->name }}</td>
+            <td>{{ $user->email }}</td>
+            <td>{{ $user->created_at }}</td>
           </tr>
-        @empty
-          <h1>Nenhum usuário encontrado.</h1>
-        @endforelse --}}
+        @endforeach
       </tbody>
+
     </table>
 
     {{-- Paginação --}}
-    {{-- <nav aria-label="Page navigation">
-      <ul class="pagination justify-content-center">
-        @if($currentPage > 1)
-          <li class="page-item">
-            <a class="page-link" href="?page={{ $currentPage - 1 }}">Anterior</a>
-          </li>
-        @endif
-
-        @for($i = 1; $i <= $totalPages; $i++)
-          <li class="page-item {{ $i == $currentPage ? 'active' : '' }}">
-            <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
-          </li>
-        @endfor
-
-        @if($currentPage < $totalPages)
-          <li class="page-item">
-            <a class="page-link" href="?page={{ $currentPage + 1 }}">Próximo</a>
-          </li>
-        @endif
-      </ul>
-    </nav> --}}
   </div>
 </div>
 

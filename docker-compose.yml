@@ -13,6 +13,7 @@ services:
       - ./migrations:/opt/www/migrations
       - ./runtime:/opt/www/runtime
       - ./storage:/opt/www/storage
+      - ./seeders:/opt/www/seeders
       - ./vendor:/opt/www/vendor
       - ./composer.json:/opt/www/composer.json
       - ./composer.lock:/opt/www/composer.lock

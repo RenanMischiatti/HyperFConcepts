@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Model\User;
 use Hyperf\Contract\ContainerInterface;
 use Hyperf\View\RenderInterface;
 
@@ -26,6 +27,8 @@ class IndexController extends AbstractController
 
     public function index()
     {
-        return $this->render->render('home', ['name' => 'Mundo']);
+        $users = User::with('info')->get();
+
+        return $this->render->render('home', ['users' => $users]);
     }
 }
