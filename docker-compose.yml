@@ -10,6 +10,10 @@ services:
       - ./config:/opt/www/config
       - ./public:/opt/www/public
       - ./resources:/opt/www/resources
+      - ./migrations:/opt/www/migrations
+      - ./runtime:/opt/www/runtime
+      - ./storage:/opt/www/storage
+      - ./vendor:/opt/www/vendor
       - ./composer.json:/opt/www/composer.json
       - ./composer.lock:/opt/www/composer.lock
     ports:
@@ -25,7 +29,9 @@ services:
     env_file:
       - ./.env 
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+        MYSQL_DATABASE: ${DB_DATABASE}
+        MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+        MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     ports:
       - "3306:3306"
     volumes:
