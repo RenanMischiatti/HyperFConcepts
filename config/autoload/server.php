@@ -9,6 +9,8 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
+use App\WebSocket\WebSocketHandler;
 use Hyperf\Server\Event;
 use Hyperf\Server\Server;
 use Swoole\Constant;
@@ -28,6 +30,18 @@ return [
             'options' => [
                 // Whether to enable request lifecycle event
                 'enable_request_lifecycle' => false,
+            ],
+        ],
+        [
+            'name' => 'ws',
+            'type' => Server::SERVER_WEBSOCKET,
+            'host' => '0.0.0.0',
+            'port' => 9502,
+            'sock_type' => SWOOLE_SOCK_TCP,
+            'callbacks' => [
+                'open' => [WebSocketHandler::class, 'onOpen'],
+                'message' => [WebSocketHandler::class, 'onMessage'],
+                'close' => [WebSocketHandler::class, 'onClose'],
             ],
         ],
     ],

@@ -19,6 +19,7 @@ services:
       - ./composer.lock:/opt/www/composer.lock
     ports:
       - "9501:9501"
+      - "9502:9502"
     depends_on:
       - mysql
     command: ["php", "/opt/www/bin/hyperf.php", "start"]

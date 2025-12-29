@@ -14,6 +14,7 @@
     "require": {
         "php": ">=8.1",
         "duncan3dc/blade": "^4.16",
+        "hyperf/async-queue": "^3.1",
         "hyperf/cache": "~3.1.0",
         "hyperf/command": "~3.1.0",
         "hyperf/config": "~3.1.0",
@@ -27,7 +28,8 @@
         "hyperf/memory": "~3.1.0",
         "hyperf/process": "~3.1.0",
         "hyperf/redis": "~3.1.0",
-        "hyperf/view": "^3.1"
+        "hyperf/view": "^3.1",
+        "hyperf/websocket-server": "^3.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

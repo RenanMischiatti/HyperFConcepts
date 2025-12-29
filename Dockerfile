@@ -50,5 +50,6 @@ COPY . /opt/www
 RUN composer install --no-dev -o
 
 EXPOSE 9501
+EXPOSE 9502
 
 CMD ["php", "/opt/www/bin/hyperf.php", "start"]
