@@ -1,63 +1,46 @@
-# Introduction
+# Hyperf + Swoole Project
 
-This is a skeleton application using the Hyperf framework. This application is meant to be used as a starting place for those looking to get their feet wet with Hyperf Framework.
+Este projeto é uma aplicação prática utilizando o **Hyperf Framework** com **Swoole**, desenvolvida para demonstrar conceitos avançados como:
 
-# Requirements
+- Criação de usuários em massa com geração de dados falsos.
+- Monitoramento de progresso em tempo real via WebSocket.
+- Exportação de usuários para CSV.
+- Organização da lógica usando serviços e actions no WebSocket.
 
-Hyperf has some requirements for the system environment, it can only run under Linux and Mac environment, but due to the development of Docker virtualization technology, Docker for Windows can also be used as the running environment under Windows.
+---
 
-The various versions of Dockerfile have been prepared for you in the [hyperf/hyperf-docker](https://github.com/hyperf/hyperf-docker) project, or directly based on the already built [hyperf/hyperf](https://hub.docker.com/r/hyperf/hyperf) Image to run.
+## Funcionalidades
 
-When you don't want to use Docker as the basis for your running environment, you need to make sure that your operating environment meets the following requirements:  
+1. **Factory Users**  
+   - Cria usuários em batches para otimizar performance.
+   - Envia progresso em tempo real para o frontend via WebSocket.
+   - Suporta envio de informações complementares (`users_info`).
 
- - PHP >= 8.1
- - Any of the following network engines
-   - Swoole PHP extension >= 5.0，with `swoole.use_shortname` set to `Off` in your `php.ini`
-   - Swow PHP extension >= 1.3
- - JSON PHP extension
- - Pcntl PHP extension
- - OpenSSL PHP extension （If you need to use the HTTPS）
- - PDO PHP extension （If you need to use the MySQL Client）
- - Redis PHP extension （If you need to use the Redis Client）
- - Protobuf PHP extension （If you need to use the gRPC Server or Client）
+2. **Export CSV**  
+   - Exporta usuários cadastrados para CSV.
+   - Envia progresso da exportação via WebSocket.
+   - Retorna link para download quando concluído.
 
-# Installation using Composer
+3. **WebSocket Actions**  
+   - Organiza diferentes ações em classes separadas.
+   - Permite fácil expansão para novas funcionalidades.
 
-The easiest way to create a new Hyperf project is to use [Composer](https://getcomposer.org/). If you don't have it already installed, then please install as per [the documentation](https://getcomposer.org/download/).
+---
 
-To create your new Hyperf project:
+## Pré-requisitos
 
-```bash
-composer create-project hyperf/hyperf-skeleton path/to/install
-```
+- Docker (recomendado) ou ambiente Linux/Mac com:
+  - PHP >= 8.1
+  - Extensão Swoole >= 5.0
+  - PDO, JSON, PCNTL, OpenSSL (opcional)
+- MySQL ou outro banco compatível com PDO
+- Redis (opcional, caso utilize caching ou filas)
 
-If your development environment is based on Docker you can use the official Composer image to create a new Hyperf project:
+---
 
-```bash
-docker run --rm -it -v $(pwd):/app composer create-project --ignore-platform-reqs hyperf/hyperf-skeleton path/to/install
-```
+## Rodando o projeto
 
-# Getting started
-
-Once installed, you can run the server immediately using the command below.
-
-```bash
-cd path/to/install
-php bin/hyperf.php start
-```
-
-Or if in a Docker based environment you can use the `docker-compose.yml` provided by the template:
+A forma mais simples de rodar a aplicação é utilizando Docker Compose:
 
 ```bash
-cd path/to/install
-docker-compose up
-```
-
-This will start the cli-server on port `9501`, and bind it to all network interfaces. You can then visit the site at `http://localhost:9501/` which will bring up Hyperf default home page.
-
-## Hints
-
-- A nice tip is to rename `hyperf-skeleton` of files like `composer.json` and `docker-compose.yml` to your actual project name.
-- Take a look at `config/routes.php` and `app/Controller/IndexController.php` to see an example of a HTTP entrypoint.
-
-**Remember:** you can always replace the contents of this README.md file to something that fits your project description.
+docker-compose up -d --build
