@@ -20,6 +20,10 @@
         <input type="number" id="user-count" class="form-control" placeholder="Qtd. Users" style="width:120px;">
         <button id="factory-btn" class="btn btn-primary">Factory Users</button>
       </div>
+
+      <button id="export-btn" class="btn btn-success">
+          Exportar CSV
+      </button>
     </div>
 
     <div class="progress">
@@ -52,97 +56,156 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const clientId = `${Date.now()}-${Math.floor(Math.random()*100000)}`;
-const ws = new WebSocket("ws://localhost:9502");
+    const clientId = `${Date.now()}-${Math.floor(Math.random()*100000)}`;
+    const ws = new WebSocket("ws://localhost:9502");
 
-ws.onopen = () => {
-  console.log("Conectado ao WebSocket");
-  ws.send(JSON.stringify({ action: "register", clientId }));
-};
-
-ws.onmessage = (event) => {
-  try {
-    const data = JSON.parse(event.data);
     const bar = document.getElementById('factory-progress');
 
-    // Função para resetar a barra
-    const resetProgressBar = () => {
+    /* =======================
+      Funções utilitárias
+    ======================= */
+    const resetProgressBar = (label = '0%') => {
       bar.style.width = '0%';
-      bar.textContent = '0%';
-      bar.classList.remove('bg-success', 'bg-warning', 'bg-info', 'bg-primary');
-      bar.classList.add('bg-primary'); // cor padrão durante o progresso
+      bar.textContent = label;
+      bar.className = 'progress-bar bg-primary';
     };
 
-    // Função para atualizar a barra de progresso
-    const updateProgressBar = (inserted, total) => {
-      const percent = Math.round((inserted / total) * 100);
+    const updateProgressBar = (current, total, prefix = '') => {
+      const percent = Math.round((current / total) * 100);
       bar.style.width = percent + '%';
-      bar.textContent = `${percent}% — ${inserted}/${total}`;
+      bar.textContent = `${prefix}${percent}% — ${current}/${total}`;
     };
 
-    // Função para finalizar a barra
-    const finishProgressBar = (total) => {
+    const finishProgressBar = (label) => {
       bar.style.width = '100%';
-      bar.textContent = `Concluído — ${total} usuários`;
-      bar.classList.remove('bg-primary', 'bg-warning', 'bg-info');
-      bar.classList.add('bg-success');
+      bar.textContent = label;
+      bar.className = 'progress-bar bg-success';
     };
 
-    // Função para atualizar a tabela de usuários
-    const refreshUserTable = (users) => {
+    const setInfoBar = (label) => {
+      bar.className = 'progress-bar bg-info';
+      bar.textContent = label;
+    };
+
+    /* =======================
+      WebSocket
+    ======================= */
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ action: "register", clientId }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        switch (data.type) {
+
+          /* ===== Factory ===== */
+          case 'progress':
+            updateProgressBar(data.inserted, data.total);
+            break;
+
+          case 'finished':
+              finishProgressBar(`Concluído — ${data.total} usuários`);
+              if (data.users) refreshUserTable(data.users); // <-- aqui atualiza a tabela
+              break;
+
+
+          /* ===== Export ===== */
+          case 'export_progress':
+            updateProgressBar(
+              data.exported,
+              data.total,
+              'Exportando — '
+            );
+            bar.className = 'progress-bar bg-info';
+            break;
+
+          case 'export_ready':
+            finishProgressBar('Exportação concluída');
+
+            // cria um link temporário para download
+            const a = document.createElement('a');
+            a.href = data.url;        // URL que vem do WebSocket
+            a.target = '_blank';      // abre em nova aba (opcional)
+            a.download = '';          // força download
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            break;
+
+
+          case 'registered':
+            resetProgressBar();
+            break;
+
+          default:
+            console.warn('Mensagem WS desconhecida:', data);
+        }
+
+      } catch (err) {
+        console.error('Erro WS:', err);
+      }
+    };
+
+    ws.onclose = () => console.log("WS fechado");
+    ws.onerror = (err) => console.error("Erro WS:", err);
+
+    /* =======================
+      Tabela
+    ======================= */
+function refreshUserTable(users) {
+    const tbody = document.getElementById('user-table');
+    tbody.innerHTML = ''; // limpa a tabela
+
+    users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.created_at}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+  function refreshUserTable(users) {
       const tbody = document.getElementById('user-table');
       tbody.innerHTML = '';
 
       users.forEach(user => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${user.id}</td>
-          <td>${user.name}</td>
-          <td>${user.email}</td>
-          <td>${user.created_at}</td>
-        `;
-        tbody.appendChild(tr);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+              <td>${user.id}</td>
+              <td>${user.name}</td>
+              <td>${user.email}</td>
+              <td>${user.created_at}</td>
+          `;
+          tbody.appendChild(tr);
       });
-    };
-
-    // Processamento das mensagens
-    switch (data.type) {
-      case 'progress':
-        updateProgressBar(data.inserted, data.total);
-        break;
-
-      case 'finished':
-        finishProgressBar(data.total);
-        if (data.users) refreshUserTable(data.users);
-        break;
-
-      case 'registered':
-        console.log('Registrado no WS com clientId:', data.clientId);
-        resetProgressBar(); // reseta a barra quando um novo registro inicia
-        break;
-
-      default:
-        console.warn('Tipo de mensagem WS desconhecido:', data.type);
-    }
-
-  } catch(err) {
-    console.error('Erro ao processar mensagem WS:', err);
   }
-};
 
 
-ws.onclose = () => console.log("Conexão WebSocket fechada");
-ws.onerror = (err) => console.error("Erro no WebSocket:", err);
+    /* =======================
+      Botões
+    ======================= */
+    document.getElementById('factory-btn').addEventListener('click', () => {
+      resetProgressBar('Criando usuários...');
+      ws.send(JSON.stringify({
+        action: 'create_users',
+        count: parseInt(document.getElementById('user-count').value) || 100,
+        clientId
+      }));
+    });
 
-// botão agora envia ação pelo WS
-document.getElementById('factory-btn').addEventListener('click', () => {
-  ws.send(JSON.stringify({
-    action: 'create_users',
-    count: parseInt(document.getElementById('user-count').value) || 100,
-    clientId
-  }));
-});
-
+    document.getElementById('export-btn').addEventListener('click', () => {
+      resetProgressBar('Iniciando exportação...');
+      ws.send(JSON.stringify({
+        action: 'export_users',
+        clientId
+      }));
+    });
 </script>
+
 </body>
 </html>

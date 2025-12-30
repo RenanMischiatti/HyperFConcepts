@@ -34,44 +34,42 @@ class UserFactoryService
             $currentBatch = min($batchSize, $count - $inserted);
             $usersData = $this->generateUserBatch($currentBatch, $inserted);
 
-            // Insert dos users
+            // Insere os users
             User::insert($usersData);
-            $firstId = (int) Db::getPdo()->lastInsertId();
+            $lastId = (int) Db::getPdo()->lastInsertId();
 
-            // Coroutine para inserir users_info e enviar progresso para cada sub-batch
-            Coroutine::create(function() use ($usersData, $firstId, $clientId, $server, &$inserted, $count) {
-                $infosData = [];
-                foreach ($usersData as $i => $user) {
-                    $infosData[] = [
-                        'user_id' => $firstId + $i,
-                        'phone' => $this->faker->phoneNumber,
-                        'address' => $this->faker->address,
-                        'birthdate' => $this->faker->date('Y-m-d'),
-                        'created_at' => $this->now,
-                        'updated_at' => $this->now,
-                    ];
-
-                    // envia progresso **para cada usuário**
-                    if ($clientId && $server) {
-                        WebSocketHandler::pushToClient($server, $clientId, [
-                            'type' => 'progress',
-                            'inserted' => $inserted + $i + 1,
-                            'total' => $count,
-                        ]);
-                    }
-                }
-                Db::table('users_info')->insert($infosData);
-            });
+            // Cria users_info no mesmo batch
+            $infosData = [];
+            foreach ($usersData as $i => $user) {
+                $infosData[] = [
+                    'user_id' => $lastId + $i,
+                    'phone' => $this->faker->phoneNumber,
+                    'address' => $this->faker->address,
+                    'birthdate' => $this->faker->date('Y-m-d'),
+                    'created_at' => $this->now,
+                    'updated_at' => $this->now,
+                ];
+            }
+            Db::table('users_info')->insert($infosData);
 
             $inserted += $currentBatch;
+
+            // Envia progresso a cada batch
+            if ($clientId && $server) {
+                WebSocketHandler::pushToClient($server, $clientId, [
+                    'type' => 'progress',
+                    'inserted' => $inserted,
+                    'total' => $count,
+                ]);
+            }
         }
 
-        // Finalizado: envia mensagem com todos os usuários
+        // Finalizado
         if ($clientId && $server) {
             WebSocketHandler::pushToClient($server, $clientId, [
-                'type' => 'finished',
-                'total' => $count,
-                'users' => User::all(),
+                    'type' => 'finished',
+                    'total' => $count,
+                    'users' => User::orderBy('id')->get()->toArray(), 
             ]);
         }
     }

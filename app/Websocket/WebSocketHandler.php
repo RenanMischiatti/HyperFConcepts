@@ -2,8 +2,12 @@
 
 namespace App\WebSocket;
 
-use App\Service\UserFactoryService;
-use Hyperf\Coroutine\Coroutine;
+use App\WebSocket\Action\{
+    WebSocketActionInterface,
+    CreateUsersAction,
+    ExportUsersAction
+};
+use Hyperf\Support\make;
 use Swoole\WebSocket\Server as SwooleServer;
 use Swoole\WebSocket\Frame;
 
@@ -11,58 +15,67 @@ use function Hyperf\Support\make;
 
 class WebSocketHandler
 {
-    // Armazena os clientes pelo clientId enviado pelo front
+    /**
+     * Armazena os clients pelo clientId
+     * @var array<string,int>
+     */
     protected static array $clients = [];
 
-    public function onOpen(SwooleServer $server, $request)
+    /**
+     * Mapeamento de ações
+     * @var array<string,class-string<WebSocketActionInterface>>
+     */
+    protected static array $actions = [
+        'create_users' => CreateUsersAction::class,
+        'export_users' => ExportUsersAction::class,
+    ];
+
+    public function onOpen(SwooleServer $server, $request): void
     {
         echo "Cliente conectado: fd={$request->fd}\n";
     }
 
-    public function onMessage(SwooleServer $server, Frame $frame)
+    public function onMessage(SwooleServer $server, Frame $frame): void
     {
         $data = json_decode($frame->data, true);
-
-        if (!isset($data['action'])) return;
-
-        switch ($data['action']) {
-            case 'register':
-                $clientId = $data['clientId']; // pega exatamente do front
-                self::$clients[$clientId] = $frame->fd;
-
-                // Usa pushToClient estático
-                self::pushToClient($server, $clientId, [
-                    'type' => 'registered',
-                    'clientId' => $clientId, // retorna o mesmo que veio do front
-                ]);
-                break;
-
-            case 'create_users':
-                $service = make(UserFactoryService::class);
-                $service->create($data['count'], $data['clientId'], $server);
-
-                break;
-        }
-    }
-
-    public static function pushToClient(SwooleServer $server, string $clientId, array $data)
-    {
-        if (!isset(self::$clients[$clientId])) {
+        if (!isset($data['action']) || !isset($data['clientId'])) {
             return;
         }
 
-        $fd = self::$clients[$clientId];
-        $server->push($fd, json_encode($data));
+        $clientId = $data['clientId'];
+
+        // Registra o fd do clientId se ainda não registrado
+        if (!isset(self::$clients[$clientId])) {
+            self::$clients[$clientId] = $frame->fd;
+        }
+
+        // Executa a ação
+        if (isset(self::$actions[$data['action']])) {
+            
+            /** @var WebSocketActionInterface $action */
+            $action = make(self::$actions[$data['action']]);
+            $action->handle($data, $clientId, $server);
+            return;
+        }
+
+        echo "Ação desconhecida: {$data['action']}\n";
     }
 
-    public function onClose(SwooleServer $server, $fd)
+    /**
+     * Envia dados para um client específico
+     */
+    public static function pushToClient(SwooleServer $server, string $clientId, array $data): void
     {
-        echo "Cliente desconectado: fd={$fd}\n";
+        if (!isset(self::$clients[$clientId])) return;
+        $server->push(self::$clients[$clientId], json_encode($data));
+    }
 
-        // Remove o cliente da lista
+    public function onClose(SwooleServer $server, int $fd): void
+    {
         $clientId = array_search($fd, self::$clients);
         if ($clientId !== false) {
             unset(self::$clients[$clientId]);
         }
+        echo "Cliente desconectado: fd={$fd}\n";
     }
 }

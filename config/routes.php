@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
+use App\Controller\ExportController;
 use App\Controller\IndexController;
 use Hyperf\HttpServer\Router\Router;
 
@@ -20,3 +21,4 @@ Router::get('/favicon.ico', function () {
 });
 
 Router::post('/users/factory', [IndexController::class, 'factory']);
+Router::get('/file-download', [ExportController::class, 'export']);
